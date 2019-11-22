@@ -4,28 +4,33 @@ const loggedInLinks = document.querySelectorAll('.logged-in');
 let accountDetails = document.querySelector('.account-details');
 const adminItems = document.querySelectorAll('.admin');
 
+
 const setupUI = (user) => {
     if (user){
+
         if (user.admin) {
             adminItems.forEach(item => item.style.display = 'block');
         }
 
-        //console.log("user: ", user);
-        console.log("user.uid: ", user.uid);
-        //console.log("user Name: ", db.collection('users').doc(user.uid));
+        //Grabs user information from the 'users' collection
+        db.collection('users').doc(user.uid).get().then(doc => {
 
-        const html = `<h4>Welcome</h4>
-        <div>E-mail address: ${user.email}</div>
+            const html = `<h4>${user.displayName}</h4>
+        <p style="margin-top:40px;"></p>
+        <div>email address: ${user.email}</div>
+        <p style="margin-top:20px;"></p>
+        <div>About me:      ${doc.data().aboutMe}</div>
         <div class="pink-text">${user.admin ? 'Admin' : ''}</div>`;
-        //<div>Your age: ${snapshot.data().age}</div>
-        accountDetails.innerHTML = html;
+            //<div>Your age: ${snapshot.data().age}</div>
+            accountDetails.innerHTML = html;
+        });
 
         //toggle UI elements
         loggedInLinks.forEach(item => item.style.display = 'block');
         loggedOutLinks.forEach(item => item.style.display = 'none');
     }else{
         //Account info
-        accountDetails = '';
+        accountDetails.innerHTML = '';
 
         //toggle UI elements
         loggedInLinks.forEach(item => item.style.display = 'none');
@@ -33,7 +38,7 @@ const setupUI = (user) => {
     }
 };
 
-//setting up guides
+/*//setting up guides
 const setupGuides = (user) => {
 
     //Login vs Non Login display
@@ -53,7 +58,7 @@ const setupGuides = (user) => {
         guideList.innerHTML = html;
     }
 
-};
+};*/
 
 
 // setup materialize components

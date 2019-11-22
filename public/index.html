@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:outline="http://www.w3.org/1999/xhtml">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,34 +8,42 @@
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
         <style>
             #map {
-                width: 100%;
-                height: 400px;
                 background-color: grey;
+
+                width: 92vh; /* Fallback for browsers that do not support Custom Properties */
+                width: calc(var(--vh2, 1vh) * 92);
+
+                height: 72vh; /* Fallback for browsers that do not support Custom Properties */
+                height: calc(var(--vh, 1vh) * 72);
             }
             p {white-space: pre-wrap;}
-            textarea {resize: none;}
+            textarea {resize: none; font-size: 16px; display: block; margin: 20px auto; max-width: 300px;
+                border-radius: 6px; border: solid 1px #9e9e9e;}
+            textarea:focus{border-radius: 6px; outline: 1px solid #9e9e9e;}
+            select {font-size: 16px; display: block; border-radius: 6px; border: solid 1px #9e9e9e; outline:none;}
+            textarea:focus{border-radius: 6px; outline: 1px solid #9e9e9e;}
         </style>
         <title>Meevent</title>
         <link href = "images/favicon.ico" rel="icon" type="image/icon">
     </head>
 
-    <body class="grey lighten-2">
+    <body class="grey lighten-3">
 
         <!-- NAVBAR -->
         <nav class="z-depth-0 grey lighten-4">
             <div class="nav-wrapper container">
                 <a href="#" class="brand-logo left">
-                    <h5 style="width: 88px; margin-top: 20px; color: Black">Meevent</h5>
+                    <h5 style="width: 88px; color: Black">Meevent</h5>
                 </a>
                 <ul id="nav-mobile" class="right">
                     <li class="logged-in" style="display: none;">
                         <a href="#" class="grey-text modal-trigger" data-target="modal-account">Account</a>
                     </li>
                     <li class="logged-in" style="display: none;">
-                        <a href="#" class="grey-text" id="logout">Logout</a>
+                        <a href="#" class="grey-text" id="logout">Log out</a>
                     </li>
                     <li class="logged-out" style="display: none;">
-                        <a href="#" class="grey-text modal-trigger" data-target="modal-login">Login</a>
+                        <a href="#" class="grey-text modal-trigger" data-target="modal-login">Log in</a>
                     </li>
                     <li class="logged-out" style="display: none;">
                         <a href="#" class="grey-text modal-trigger" data-target="modal-signup">Sign up</a>
@@ -50,14 +58,23 @@
             <button class="btn-small yellow darken-2 z-depth-0">Make Admin</button>
         </form>-->
 
+
+        <!-- USER MODAL -->
+        <div id="modal-user" class="modal">
+            <div class="modal-content center-align">
+                <div class="user-details"></div>
+            </div>
+        </div>
+
+
         <!-- SIGN UP MODAL -->
         <div id="modal-signup" class="modal">
             <div class="modal-content">
                 <h4>Sign up</h4><br />
                 <form id="signup-form">
                     <div class="input-field">
-                        <input type="text" id="signup-name" required />
-                        <label for="signup-email">Name or pseudo</label>
+                        <input type="text" id="signup-name" minlength="5" maxlength="35" required />
+                        <label for="signup-name">Name or pseudo</label>
                     </div>
                     <div class="input-field">
                         <input type="email" id="signup-email" required />
@@ -66,6 +83,10 @@
                     <div class="input-field">
                         <input type="password" id="signup-password" required />
                         <label for="signup-password">Choose password</label>
+                    </div>
+                    <div class="input-field">
+                        <input type="text" id="signup-aboutMe" maxlength="140"/>
+                        <label for="signup-aboutMe">Write few lines about you</label>
                     </div>
                     <button class="btn yellow darken-2 z-depth-0">Sign up</button>
                     <p class="error pink-text center-align"></p>
@@ -86,7 +107,7 @@
                         <input type="password" id="login-password" required />
                         <label for="login-password">Your password</label>
                     </div>
-                    <button class="btn yellow darken-2 z-depth-0">Login</button>
+                    <button class="btn yellow darken-2 z-depth-0">Log in</button>
                     <p class="error pink-text center-align"></p>
                 </form>
             </div>
@@ -106,43 +127,80 @@
         <div id="guide-list" class="container dbclickedHide" style="margin-top: 20px;">
             <ul class="collapsible z-depth-0 guides logged-in" style="border: none;display: none;">
                 <h5 class="infoDoubleTap center-align"> Double-tap on the map to add events</h5>
+                <h6 class="infoDoubleTap center-align pink-text"> Click on an event to display information</h6>
                 <p class="warning pink-text center-align"></p>
             </ul>
         </div>
 
         <div class="container" style="margin-top: 20px;">
             <ul class="collapsible z-depth-0 guides logged-out" style="border: none;display: none;">
-                <h5 class="center-align">Login to add events</h5>
+                <h5 class="center-align">😊 Welcome on Meevent ! 🎉</h5>
+                <p class="center-align" style="margin-top: 30px;">Meevent is a social and collaborative platform which helps you find events around your location.</p>
+                <p class="center-align">With a simple look on the map you can easily find events represented as red markers.</p>
+                <p class="center-align">Just click once on them to display all the useful information you need.</p>
+                <p class="center-align pink-text">To add your own events please <b>Sign up</b> or <b>Log in</b> from the top right corner of the website</p>
+                <h5 class="center-align" style="margin-top: 30px;">Enjoy !</h5>
             </ul>
         </div>
 
         <!-- ACTION BUTTONS -->
         <div class="logged-in">
             <form id="delete-event-form" class="clickMarker center-align" style="display: none; margin: 20px auto; max-width: 300px;">
-                <button class="btn-large red darken-2">Delete the selected event</button>
+                <button class="btn-large red darken-2">Delete this event</button>
+                <h6>Click or tap on the map to come back</h6>
             </form>
 
             <form id="add-event-form" class="dbclicked center-align" style="display: none; margin: 20px auto; max-width: 300px;">
-                <h5 class="center-align">Please fill out the form</h5>
+                <h5 class="center-align">Please drag the blue marker to your event location</h5>
+                <h6 class="center-align" style="margin-top: 20px">Fill the forms below to provide useful information
+                    about your event then click the "add event" button</h6>
+                <p class="pink-text" style="margin-bottom: 40px">📍 Note that your event will only be displayed on the map for 24 hours</p>
 
-                <label>Event name</label>
-                <input type="text" name="name" placeholder="Event name" minlength="4" maxlength="30" required>
+                <div class="input-field">
+                    <input type="text" name="name" minlength="4" maxlength="30" required>
+                    <label>Event name</label>
+                </div>
 
-                <label></label>
-                <label>Event description</label>
-                <textarea name="description" placeholder="Write your description here" rows = "120" cols="40"
-                          wrap="hard" maxlength="900" required
-                          style="display: block; margin: 20px auto; max-width: 300px;"></textarea>
+                <div class="input-field">
+                    <input type="text" name="timeInfo" minlength="10" maxlength="50" required>
+                    <label>Time schedule of your event</label>
+                </div>
 
-                <label></label>
-                <button class="btn-large blue" style="display: block; margin: 20px auto; max-width: 300px;">Add Event</button>
+                <p style="margin:40px"></p>
+
+                <label class="left" style="font-size: 1rem;">Event description</label>
+                <textarea name="description" rows = "120" cols="40"
+                          wrap="hard" maxlength="900" minlength="10" maxlength="900" required></textarea>
+
+                <p style="margin:20px"></p>
+
+                <label class="left" style="font-size: 1rem;">Pick an emoji for your event</label>
+                <select class="text-align: center" name="select">
+                    <option value="😍">Nice:   😍</option>
+                    <option value="📚">Study:  📚</option>
+                    <option value="☕️">Coffee: ☕️</option>
+                    <option value="🍔">Food:   🍔</option>
+                    <option value="🎮">Game:   🎮</option>
+                    <option value="💪🏼">Sport:  💪🏼</option>
+                    <option value="🎹">Music:  🎹</option>
+                    <option value="🍰">Desert: 🍰</option>
+                    <option value="🍺">Beer:   🍺</option>
+                    <option value="🎨">Art:    🎨</option>
+                    <option value="☀️">Sun:    ☀️</option>
+                    <option value="❔">unknown:❔</option>
+                </select>
+
+                <p style="margin:40px"></p>
+
+                <button class="btn-large blue" style="display: block; margin: 40px auto; max-width: 300px;">Add Event</button>
             </form>
 
-            <form id="delete-new-form" class="dbclicked center-align" style="display: none; margin: 10px auto; max-width: 300px;">
+            <form id="delete-new-form" class="dbclicked center-align" style="display: none; margin: 20px auto; max-width: 300px;">
                 <button class="btn-large red">  Cancel  </button>
             </form>
 
         </div>
+
 
 
         <!-- The core Firebase JS SDK is always required and must be listed first -->
@@ -154,13 +212,32 @@
         <!-- Initialize Firebase -->
         <script src="/__/firebase/init.js"></script>
 
-        <!-- Link to Database -->
+        <!-- Link to Firebase and Firestore -->
         <script>
             const db = firebase.firestore();
             const auth = firebase.auth();
             const functions = firebase.functions();
         </script>
 
+        <!-- Actions for a nice screen view -->
+        <script>
+            // First we get the viewport height and we multiple it by 1% to get a value for a vh unit
+            let vh = window.innerHeight * 0.01;
+            // Then we set the value in the --vh custom property to the root of the document
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+            // Same for Width
+            let vh2 = window.innerWidth * 0.01;
+            document.documentElement.style.setProperty('--vh2', `${vh2}px`);
+
+            //Listens for a switch from portrait to landscape (Mobile device)
+            window.addEventListener('resize', () => {
+                // We execute the same script as before
+                let vh = window.innerHeight * 0.01;
+                let vh2 = window.innerWidth * 0.01;
+                document.documentElement.style.setProperty('--vh', `${vh}px`);
+                document.documentElement.style.setProperty('--vh2', `${vh2}px`);
+            });
+        </script>
 
 
         <!-- Compiled and minified JavaScript -->

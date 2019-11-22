@@ -9,6 +9,7 @@ const existingMarkerLink = document.querySelectorAll('.clickMarker');
 const dbclickHideLink = document.querySelectorAll('.dbclickedHide');
 const doubleTapOnTheMapToAdd = document.querySelectorAll('.infoDoubleTap');
 const addEventWarning = document.querySelector('#guide-list');
+let userDetails = document.querySelector('.user-details');
 
 
 function initMap() {
@@ -69,7 +70,8 @@ function initMap() {
             map.setZoom(16);
 
         }, error =>{
-            console.log("error detecting position")
+            addEventWarning.querySelector('.warning').innerHTML =
+                "An error has occurred while trying to get your location";
         }, {
             enableHighAccuracy: true,
         });
@@ -162,9 +164,31 @@ function initMap() {
         marker.addListener('click', function() {
             infowindow.open(marker.get('map'), marker);
             instantClickID = marker.myOwnProperty[0];
+
+            //DELETE EVENT - APPEARS ONLY FOR SAME USER
+            var authorId = marker.myOwnProperty[2];
+            var userId = "";
+            //Check if the user is logged-in or not
+            if(auth.currentUser != null){
+                 userId = auth.currentUser.uid;
+            }
             //Allows the "delete marker button to appear"
-            existingMarkerLink.forEach(item => item.style.display = 'block');
-            doubleTapOnTheMapToAdd.forEach(item => item.style.display = 'none');
+            if(authorId == userId) {
+                existingMarkerLink.forEach(item => item.style.display = 'block');
+                doubleTapOnTheMapToAdd.forEach(item => item.style.display = 'none');
+            }
+
+
+            //GETTING A USER PROFILE
+            db.collection('users').doc(authorId).get().then(doc => {
+
+                const html = `<h4>${doc.data().name}</h4>
+                <p style="margin-top:40px;"></p>
+                <div>About me:      ${doc.data().aboutMe}</div>`;
+
+                userDetails.innerHTML = html;
+            });
+
         });
 
         map.addListener('click', function () {
@@ -179,14 +203,22 @@ function initMap() {
         var descriptionEvent  = event.data().description;
         var expirationDate    = event.data().expirationDate;
         var idEvent           = event.id;
-        var author = "";
+        var authorId          = event.data().id;
+        var timeInfo          = event.data().timeInfo;
+        var emoji             = event.data().emoji;
 
-        //Get the author name
-        db.collection('users').doc(event.data().id).get().then( function(doc) {
+        var author;
+        var aboutMe;
+
+
+        //Get the user info
+        db.collection('users').doc(authorId).get().then( function(doc) {
             if (doc.exists) {
+                aboutMe = doc.data().aboutMe;
                 author = doc.data().name;
             } else {
-                author = "an unknown artist"
+                aboutMe = "No bio available";
+                author = "An unknown artist";
             }
 
             var newMarker = new google.maps.Marker({
@@ -195,9 +227,9 @@ function initMap() {
                 animation: google.maps.Animation.DROP,
                 label: {
                     color: 'black',
-                    text: '💌',
+                    text: emoji,
                 },
-                myOwnProperty: [idEvent, expirationDate],
+                myOwnProperty: [idEvent, expirationDate, authorId],
             });
 
             /*//Set a special ICON for the user's markers
@@ -215,13 +247,19 @@ function initMap() {
             var infoBox = '<div>' +
                 '<h6>' + nameEvent + '</h6>' +
                 '<div>' +
-                '<p>' + descriptionEvent + '</p>' +
+                '<p class="pink-text">Time info: <b>' + timeInfo + '</b></p>' +
+
                 '<p>' + '</p>' +
-                '<p>Written by: <b>' + author + '</b></p>' +
+                '<p>' + descriptionEvent + '</p>' +
+
+                '<p>' + '</p>' +
+
+                '<p>Written by: ' +
+                    '<a href="#" class="blue-text modal-trigger" data-target="modal-user">' +
+                        author + '</a>' +
+                '</p>' +
                 '</div>' +
                 '</div>';
-
-            console.log(author);
 
             //Attach an InfoWindow to marker
             attachInfo(newMarker, infoBox);
@@ -233,7 +271,7 @@ function initMap() {
 
 
         }).catch(function(error) {
-            console.log("Error getting author:", error);
+            //Error getting the author/bio of the event
         });
     }
 
@@ -288,7 +326,6 @@ function initMap() {
             //Expired event
             if(expiryMs == 0) {
                 //Tries to delete marker from Database (NEED LOGIN)
-                console.log("inside expiryMs == 0");
                 db.collection('events').doc(id)
                     .delete()
                     .then(() => {
@@ -325,7 +362,7 @@ function initMap() {
 
     //Attach InfoWindow to marker to explain how to create a new event
     var window = new google.maps.InfoWindow({
-        content: 'My new event!'
+        content: 'Please Drag me to your event'
     });
 
 
@@ -349,34 +386,58 @@ function initMap() {
         //Parse ms to Date()
         var date = new Date(time + TTL);
 
-        if( typeof(add_form.name.value) == "string" && typeof(add_form.description.value) == "string" ) {
+        //CHECKS CORRECT FORMAT
+        if( typeof(add_form.name.value) == "string" && typeof(add_form.description.value) == "string"
+            && typeof(add_form.timeInfo.value) == "string") {
 
-            if( add_form.name.value.length >= 4 && add_form.name.value.length <= 30
-                && add_form.description.value.length <= 900 ) {
+            //CHECKS CORRECT LENGTH
+            if( add_form.name.value.length >= 4 &&
+                add_form.name.value.length <= 30 &&
+                add_form.description.value.length >= 10 &&
+                add_form.description.value.length <= 900 &&
+                add_form.timeInfo.value.length >= 10 &&
+                add_form.timeInfo.value.length <= 50) {
 
-                db.collection('events').add({
-                    name : add_form.name.value,
-                    description : add_form.description.value,
-                    expirationDate : firebase.firestore.Timestamp.fromDate(date),
-                    position : new firebase.firestore.GeoPoint(marker.position.lat(),
-                        marker.position.lng()),
-                    id : auth.currentUser.uid,
-                }).then(() => {
-                    console.log("success add");
-                }).catch((err) => {
-                    console.log("failed add: ", err);
-                });
+                //CHECK DANGEROUS CHARACTERS
+                if( add_form.name.value.includes("<") ||
+                    add_form.name.value.includes("'") ||
+                    add_form.description.value.includes("<") ||
+                    add_form.description.value.includes("'") ||
+                    add_form.timeInfo.value.includes("<") ||
+                    add_form.timeInfo.value.includes("'") ) {
 
-                //Clear the text in the forms after adding
-                add_form.name.value = '';
-                add_form.description.value = '';
+                    addEventWarning.querySelector('.warning').innerHTML =
+                        "Sorry, you cannot input the following characters in the forms: " + "' and <";
 
-                //Don't display any warning
-                addEventWarning.querySelector('.warning').innerHTML = '';
+                } else {
+
+                    db.collection('events').add({
+                        name: add_form.name.value,
+                        description: add_form.description.value,
+                        timeInfo: add_form.timeInfo.value,
+                        expirationDate: firebase.firestore.Timestamp.fromDate(date),
+                        position: new firebase.firestore.GeoPoint(marker.position.lat(),
+                            marker.position.lng()),
+                        id: auth.currentUser.uid,
+                        emoji: add_form.select.value,
+                    }).then(() => {
+                        //success
+                    }).catch((err) => {
+                        //error
+                    });
+
+                    //Clear the text in the forms after adding
+                    add_form.name.value = '';
+                    add_form.description.value = '';
+                    add_form.timeInfo.value = '';
+
+                    //Don't display any warning
+                    addEventWarning.querySelector('.warning').innerHTML = '';
+                }
 
             } else {
                 addEventWarning.querySelector('.warning').innerHTML = "'Name' length :" +
-                    " between 4 and 30 characters. 'Description' length : less than 900 characters";
+                    " between 4 and 30 characters. 'Description' length : between 10 and 900 characters";
             }
 
         } else {
@@ -388,14 +449,11 @@ function initMap() {
     del_form.addEventListener('submit', (e) =>{
         //Prevent reloading the page
         e.preventDefault();
-        db.collection('events').doc(instantClickID).delete()
-            .then(() => {
-                console.log("successfull delete");
-            }).catch((err) => {
-            console.log("fail delete: ", err);
-        }, err => {
-                console.log("error: ", err)
-        });
+        db.collection('events').doc(instantClickID).delete().then(() => {
+                //Success
+            }).catch(() => {
+                //Error
+            });
         existingMarkerLink.forEach(item => item.style.display = 'none');
         doubleTapOnTheMapToAdd.forEach(item => item.style.display = 'block');
     });
@@ -515,11 +573,15 @@ function CenterControl(controlDiv, map) {
                 map.setCenter(positionNow);
 
             }, error => {
-                console.log("error detecting position")
+                addEventWarning.querySelector('.warning').innerHTML =
+                    "An error has occurred while trying to get your location";
             }, {
                 enableHighAccuracy: true,
             });
-        } else { alert ("You need to turn on geolocation on your device") }
+        } else { addEventWarning.querySelector('.warning').innerHTML =
+            "You need to turn on geolocation on your device or web browser in order for us to help you " +
+            "find events around you"
+        }
     });
 
 }

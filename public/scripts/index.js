@@ -5,6 +5,7 @@ let accountDetails = document.querySelector('.account-details');
 const adminItems = document.querySelectorAll('.admin');
 
 
+
 const setupUI = (user) => {
     if (user){
 
@@ -16,11 +17,11 @@ const setupUI = (user) => {
         db.collection('users').doc(user.uid).get().then(doc => {
 
             const html = `<h4>${user.displayName}</h4>
-        <p style="margin-top:40px;"></p>
-        <div>email address: ${user.email}</div>
-        <p style="margin-top:20px;"></p>
-        <div>About me:      ${doc.data().aboutMe}</div>
-        <div class="pink-text">${user.admin ? 'Admin' : ''}</div>`;
+            <div style="margin-top:40px;"><b>mail: </b>${user.email}</div>
+            <div style="margin-top:20px;"><b>About me: </b>${doc.data().aboutMe}</div>
+            <div class="btn-large blue" style="margin-top:40px;">${doc.data().totalNbEvents}</div>
+            <div class="blue-text" style="margin-top:10px;">Total number of shared events</div>
+            <div class="pink-text">${user.admin ? 'Admin' : ''}</div>`;
             //<div>Your age: ${snapshot.data().age}</div>
             accountDetails.innerHTML = html;
         });

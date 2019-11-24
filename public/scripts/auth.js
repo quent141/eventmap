@@ -36,6 +36,9 @@ auth.onAuthStateChanged(user => {
     } else{
         setupUI();
     }
+
+    //Update markers
+    setupMarkers(markers,user);
 });
 
 
@@ -79,6 +82,7 @@ signupForm.addEventListener('submit', (e) => {
             return db.collection('users').doc(cred.user.uid).set({
                 aboutMe: signupForm['signup-aboutMe'].value,
                 name: signupForm['signup-name'].value,
+                totalNbEvents: 0,
             });
 
         }).then(() => {

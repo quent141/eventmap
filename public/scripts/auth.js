@@ -83,6 +83,7 @@ signupForm.addEventListener('submit', (e) => {
                 aboutMe: signupForm['signup-aboutMe'].value,
                 name: signupForm['signup-name'].value,
                 totalNbEvents: 0,
+                nbEvents: 0,
             });
 
         }).then(() => {
